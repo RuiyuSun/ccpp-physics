@@ -363,7 +363,7 @@ module mp_thompson
                               spechum, qc, qr, qi, qs, qg, ni, nr, &
                               is_aerosol_aware, nc, nwfa, nifa,    &
                               nwfa2d, nifa2d,                      &
-                              tgrs, prsl, phii, omega, dtp,        &
+                              tgrs, prsl, phii, omega, dtp, del,   &
                               prcp, rain, graupel, ice, snow, sr,  &
                               refl_10cm, reset, do_radar_ref,      &
                               re_cloud, re_ice, re_snow,           &
@@ -401,6 +401,7 @@ module mp_thompson
          real(kind_phys),           intent(in   ) :: prsl(1:ncol,1:nlev)
          real(kind_phys),           intent(in   ) :: phii(1:ncol,1:nlev+1)
          real(kind_phys),           intent(in   ) :: omega(1:ncol,1:nlev)
+         real(kind_phys),           intent(in   ) :: del(1:ncol,1:nlev)
          real(kind_phys),           intent(in   ) :: dtp
          ! Precip/rain/snow/graupel fall amounts and fraction of frozen precip
          real(kind_phys),           intent(  out) :: prcp(1:ncol)
@@ -428,6 +429,7 @@ module mp_thompson
 
          ! Air density
          real(kind_phys) :: rho(1:ncol,1:nlev)              !< kg m-3
+         real(kind_phys) :: prsld(1:ncol,1:nlev)
          ! Hydrometeors
          real(kind_phys) :: qv_mp(1:ncol,1:nlev)            !< kg kg-1 (dry mixing ratio)
          real(kind_phys) :: qc_mp(1:ncol,1:nlev)            !< kg kg-1 (dry mixing ratio)
@@ -442,6 +444,11 @@ module mp_thompson
          ! Vertical velocity and level width
          real(kind_phys) :: w(1:ncol,1:nlev)                !< m s-1
          real(kind_phys) :: dz(1:ncol,1:nlev)               !< m
+
+         real(kind_phys) :: dp0(1:ncol,1:nlev)   ! pascal
+         real(kind_phys) :: dp1(1:ncol,1:nlev)   ! pascal
+         real(kind_phys) :: omq(1:ncol,1:nlev)
+
          ! Rain/snow/graupel fall amounts
          real(kind_phys) :: rain_mp(1:ncol)                 ! mm, dummy, not used
          real(kind_phys) :: graupel_mp(1:ncol)              ! mm, dummy, not used
@@ -481,6 +488,12 @@ module mp_thompson
             return
          end if
 
+         dp1 = del! ! moist air mass * grav
+         dp0 = dp1
+         dp1 = dp1 * (1.0_kind_phys-spechum)
+
+         omq = dp0 / dp1
+
          if (is_aerosol_aware .and. .not. (present(nc)     .and. &
                                            present(nwfa)   .and. &
                                            present(nifa)   .and. &
@@ -495,28 +508,45 @@ module mp_thompson
          end if
 
          !> - Convert specific humidity/moist mixing ratios to dry mixing ratios
-         qv_mp = spechum/(1.0_kind_phys-spechum)
-         qc_mp = qc/(1.0_kind_phys-spechum)
-         qr_mp = qr/(1.0_kind_phys-spechum)
-         qi_mp = qi/(1.0_kind_phys-spechum)
-         qs_mp = qs/(1.0_kind_phys-spechum)
-         qg_mp = qg/(1.0_kind_phys-spechum)
+!        qv_mp = spechum/(1.0_kind_phys-spechum)
+!        qc_mp = qc/(1.0_kind_phys-spechum)
+!        qr_mp = qr/(1.0_kind_phys-spechum)
+!        qi_mp = qi/(1.0_kind_phys-spechum)
+!        qs_mp = qs/(1.0_kind_phys-spechum)
+!        qg_mp = qg/(1.0_kind_phys-spechum)
+
+         qv_mp = spechum*omq
+         qc_mp = qc*omq
+         qr_mp = qr*omq
+         qi_mp = qi*omq
+         qs_mp = qs*omq
+         qg_mp = qg*omq
+
 
          !> - Convert number concentrations from moist to dry
-         ni_mp = ni/(1.0_kind_phys-spechum)
-         nr_mp = nr/(1.0_kind_phys-spechum)
+!        ni_mp = ni/(1.0_kind_phys-spechum)
+!        nr_mp = nr/(1.0_kind_phys-spechum)
+         ni_mp = ni*omq
+         nr_mp = nr*omq
+
          if (is_aerosol_aware) then
-            nc_mp = nc/(1.0_kind_phys-spechum)
+!           nc_mp = nc/(1.0_kind_phys-spechum)
+            nc_mp = nc*omq
          end if
 
          !> - Density of air in kg m-3
-         rho = prsl/(con_rd*tgrs)
+!        rho = prsl/(con_rd*tgrs)
 
          !> - Convert omega in Pa s-1 to vertical velocity w in m s-1
-         w = -omega/(rho*con_g)
+!        w = -omega/(rho*con_g)
 
          !> - Layer width in m from geopotential in m2 s-2
          dz = (phii(:,2:nlev+1) - phii(:,1:nlev)) / con_g
+         !> - Density of dry air in kg m-3
+         rho = dp1/(con_g*dz)! dry air density. 
+         prsld = rho*con_rd*tgrs  ! dry air pressure
+         !> - Convert omega in Pa s-1 to vertical velocity w in m s-1
+         w = -omega/(rho*con_g)
 
          ! Accumulated values inside Thompson scheme, not used;
          ! only use delta and add to inout variables (different units)
@@ -585,7 +615,8 @@ module mp_thompson
             call mp_gt_driver(qv=qv_mp, qc=qc_mp, qr=qr_mp, qi=qi_mp, qs=qs_mp, qg=qg_mp,    &
                               ni=ni_mp, nr=nr_mp, nc=nc_mp,                                  &
                               nwfa=nwfa, nifa=nifa, nwfa2d=nwfa2d, nifa2d=nifa2d,            &
-                              tt=tgrs, p=prsl, w=w, dz=dz, dt_in=dtp,                        &
+!                             tt=tgrs, p=prsl, w=w, dz=dz, dt_in=dtp,                        &
+                              tt=tgrs, p=prsld, w=w, dz=dz, deld=dp1, dt_in=dtp,             &
                               rainnc=rain_mp, rainncv=delta_rain_mp,                         &
                               snownc=snow_mp, snowncv=delta_snow_mp,                         &
                               icenc=ice_mp, icencv=delta_ice_mp,                             &
@@ -606,7 +637,8 @@ module mp_thompson
          else
             call mp_gt_driver(qv=qv_mp, qc=qc_mp, qr=qr_mp, qi=qi_mp, qs=qs_mp, qg=qg_mp,    &
                               ni=ni_mp, nr=nr_mp,                                            &
-                              tt=tgrs, p=prsl, w=w, dz=dz, dt_in=dtp,                        &
+!                             tt=tgrs, p=prsl, w=w, dz=dz, dt_in=dtp,                        &
+                              tt=tgrs, p=prsld, w=w, dz=dz, deld=dp1, dt_in=dtp,             &
                               rainnc=rain_mp, rainncv=delta_rain_mp,                         &
                               snownc=snow_mp, snowncv=delta_snow_mp,                         &
                               icenc=ice_mp, icencv=delta_ice_mp,                             &
@@ -627,18 +659,29 @@ module mp_thompson
          if (errflg/=0) return
 
          !> - Convert dry mixing ratios to specific humidity/moist mixing ratios
-         spechum = qv_mp/(1.0_kind_phys+qv_mp)
-         qc      = qc_mp/(1.0_kind_phys+qv_mp)
-         qr      = qr_mp/(1.0_kind_phys+qv_mp)
-         qi      = qi_mp/(1.0_kind_phys+qv_mp)
-         qs      = qs_mp/(1.0_kind_phys+qv_mp)
-         qg      = qg_mp/(1.0_kind_phys+qv_mp)
+!        spechum = qv_mp/(1.0_kind_phys+qv_mp)
+!        qc      = qc_mp/(1.0_kind_phys+qv_mp)
+!        qr      = qr_mp/(1.0_kind_phys+qv_mp)
+!        qi      = qi_mp/(1.0_kind_phys+qv_mp)
+!        qs      = qs_mp/(1.0_kind_phys+qv_mp)
+!        qg      = qg_mp/(1.0_kind_phys+qv_mp)
+         omq = dp1 / dp0 
+         spechum = qv_mp*omq
+         qc      = qc_mp*omq
+         qr      = qr_mp*omq
+         qi      = qi_mp*omq
+         qs      = qs_mp*omq
+         qg      = qg_mp*omq
 
          !> - Convert number concentrations from dry to moist
-         ni      = ni_mp/(1.0_kind_phys+qv_mp)
-         nr      = nr_mp/(1.0_kind_phys+qv_mp)
+!        ni      = ni_mp/(1.0_kind_phys+qv_mp)
+!        nr      = nr_mp/(1.0_kind_phys+qv_mp)
+         ni      = ni_mp*omq
+         nr      = nr_mp*omq
+
          if (is_aerosol_aware) then
-            nc      = nc_mp/(1.0_kind_phys+qv_mp)
+!           nc      = nc_mp/(1.0_kind_phys+qv_mp)
+            nc      = nc_mp*omq
          end if
 
          !> - Convert rainfall deltas from mm to m (on physics timestep); add to inout variables

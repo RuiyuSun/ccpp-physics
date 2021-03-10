@@ -1788,7 +1788,7 @@ MODULE module_mp_thompson
          temp(k) = t1d(k)
          qv(k) = MAX(1.E-10, qv1d(k))
          pres(k) = p1d(k)
-         rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
+!        rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
          nwfa(k) = MAX(11.1E6, MIN(9999.E6, nwfa1d(k)*rho(k)))
          nifa(k) = MAX(naIN1*0.01, MIN(9999.E6, nifa1d(k)*rho(k)))
          mvd_r(k) = D0r
@@ -2987,7 +2987,7 @@ MODULE module_mp_thompson
          otemp = 1./temp(k)
          tempc = temp(k) - 273.15
          qv(k) = MAX(1.E-10, qv1d(k) + DT*qvten(k))
-         rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
+!        rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
          rhof(k) = SQRT(RHO_NOT/rho(k))
          rhof2(k) = SQRT(rhof(k))
          qvs(k) = rslf(pres(k), temp(k))
@@ -3268,7 +3268,7 @@ MODULE module_mp_thompson
           if (.NOT. is_aerosol_aware) nc(k) = Nt_c
           qv(k) = MAX(1.E-10, qv1d(k) + DT*qvten(k))
           temp(k) = t1d(k) + DT*tten(k)
-          rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
+!         rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
           qvs(k) = rslf(pres(k), temp(k))
           ssatw(k) = qv(k)/qvs(k) - 1.
          endif
@@ -3350,7 +3350,7 @@ MODULE module_mp_thompson
           qv(k) = MAX(1.E-10, qv1d(k) + DT*qvten(k))
           nr(k) = MAX(R2, (nr1d(k) + DT*nrten(k))*rho(k))
           temp(k) = t1d(k) + DT*tten(k)
-          rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
+!         rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
          endif
       enddo
 #if ( WRF_CHEM == 1 )

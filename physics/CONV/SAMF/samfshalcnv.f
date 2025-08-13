@@ -2454,11 +2454,11 @@ c     convective cloud water
             if (cnvflg(i)) then
                if (k >= kbcon(i) .and. k < ktcon(i)) then
                   cnvw(i,k) = cnvwt(i,k) * xmb(i) * dt2
-                  if (progsigma) then
-                     cnvw(i,k) = cnvw(i,k) * sigmaoutx(i)
-                  else
-                     cnvw(i,k) = cnvw(i,k) * sigmagfm(i)
-                  endif
+!                  if (progsigma) then
+!                     cnvw(i,k) = cnvw(i,k) * sigmaoutx(i)
+!                  else
+!                     cnvw(i,k) = cnvw(i,k) * sigmagfm(i)
+!                  endif
                endif
             endif
          enddo

@@ -968,6 +968,7 @@ contains
   real (kind=kind_phys), parameter :: c2 = 0.5  !< default in bats
 !  real (kind=kind_phys), parameter :: c1 = 0.2 * 2. !<  double the default to match sleepers river's
 !  real (kind=kind_phys), parameter :: c2 = 0.5 * 2. !< snow surface albedo (double aging effects)
+  real (kind=kind_phys) :: ffage
 ! ---------------------------------------------------------------------------------------------
 ! zero albedos for all points
 
@@ -982,8 +983,9 @@ contains
         cf1=((1.+sl1)/(1.+sl2*cosz)-sl1)
         fzen=amax1(cf1,0.)
 
-        albsni(1)=0.95*(1.-c1*fage)         
-        albsni(2)=0.65*(1.-c2*fage)        
+        ffage = 0.0
+        albsni(1)=0.95*(1.-c1*ffage)         
+        albsni(2)=0.65*(1.-c2*ffage)        
 
         albsnd(1)=albsni(1)+0.4*fzen*(1.-albsni(1))    !  vis direct
         albsnd(2)=albsni(2)+0.4*fzen*(1.-albsni(2))    !  nir direct

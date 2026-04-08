@@ -586,8 +586,6 @@ contains
       integer, allocatable  :: invardims(:)
 !
       if (.not. allocated(aerin)) then
-        !GJF - put print statement in here to see what each MPI task does?
-        
         allocate(aerin(iamin:iamax,jamin:jamax,levsaer,ntrcaerm,timeaer))
         allocate(aer_pres(iamin:iamax,jamin:jamax,levsaer,timeaer))
       endif
@@ -905,7 +903,6 @@ contains
       integer ierr
 
 !! ===================================================================
-      read_and_broadcast: if (mpirank==mpiroot) then
       allocate (buff(lonsaer, latsaer, levsw))
       allocate (pres_tmp(lonsaer, levsw))
       allocate (buffx(lonsaer, latsaer, levsw, 1))
@@ -997,10 +994,7 @@ contains
 
       deallocate (buff, pres_tmp)
       deallocate (buffx)
-      endif read_and_broadcast
       
-      call ccpp_bcast(aer_pres, mpiroot, mpicomm, ierr)
-      call ccpp_bcast(aerin,    mpiroot, mpicomm, ierr)
       END SUBROUTINE read_netfaer_dl
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       subroutine read_netfaer(mpicomm, mpirank, mpiroot, nf, iflip, nt, errmsg, errflg)

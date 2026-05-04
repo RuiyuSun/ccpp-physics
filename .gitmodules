@@ -11,6 +11,6 @@
   url = https://github.com/NCAR/MYNN-SFC
   branch = main
 [submodule "physics/CONV/C3"]
-  path = physics/CONV/C3
-  url = https://github.com/lisa-bengtsson/c3.git
+	path = physics/CONV/C3
+	url = https://github.com/lisa-bengtsson/c3
   branch = c3

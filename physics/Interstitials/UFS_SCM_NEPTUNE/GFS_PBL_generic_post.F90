@@ -473,7 +473,7 @@
         enddo
       endif
 
-      if (cplchm .or. cplcat) then
+      if (cplchm) then
         if (cplflx) then
           do i = 1, im
             if (oceanfrac(i) > zero) then
